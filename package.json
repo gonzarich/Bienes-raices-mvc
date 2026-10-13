@@ -1,0 +1,29 @@
+{
+  "name": "bienesraices.mvc",
+  "version": "1.0.0",
+  "description": "Mi Primer Proyecto de Node.js",
+  "keywords": [
+    "MVC",
+    "Pug",
+    "Tailwind",
+    "MySQL",
+    "Sequelize"
+  ],
+  "license": "ISC",
+  "author": "Gonzarich",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "server": "nodemon index.js",
+    "build": ""
+  },
+  "devDependencies": {
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14",
+    "tailwindcss": "^4.1.17"
+  },
+  "dependencies": {
+    "pug": "^3.0.4"
+  }
+}
