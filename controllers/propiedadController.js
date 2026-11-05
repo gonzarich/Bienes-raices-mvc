@@ -143,10 +143,81 @@ const almacenarImagen = async (req, res, next) => {
     }
 }
 
+const editar = async (req, res) => {
+
+    const { id } = req.params
+
+    // Validar que la propiedad exista
+    const propiedad = await Propiedad.findByPk(id)
+
+    if (!propiedad) {
+        return res.redirect('/mis-propiedades')
+    }
+
+    // Revisar que quien visita la URL, es quien creo la propiedad
+    if (!propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
+
+    }
+
+    // Consultar Modelo de Precio y Categoria
+    const [precios, categorias] = await Promise.all([
+        Precio.findAll(),
+        Categoria.findAll()
+    ])
+
+    res.render('propiedades/editar', {
+        pagina: 'Editar Propiedad',
+        csrfToken: req.csrfToken(),
+        precios,
+        categorias,
+        datos: propiedad
+    })
+}
+
+const guardarCambios = async (req, res) => {
+    // Verificar la validacion     
+
+    // Validacion
+    let resultado = validationResult(req)
+
+    if (!resultado.isEmpty()) {
+        const [precios, categorias] = await Promise.all([
+            Precio.findAll(),
+            Categoria.findAll()
+        ])
+
+        return res.render('propiedades/editar', {
+            pagina: 'Editar Propiedad',
+            csrfToken: req.csrfToken(),
+            precios,
+            categorias,
+            errores: resultado.array(),
+            datos: req.body
+        })
+
+        const { id } = req.params
+
+        // Validar que la propiedad exista
+        const propiedad = await Propiedad.findByPk(id)
+
+        if (!propiedad) {
+            return res.redirect('/mis-propiedades')
+        }
+
+        // Revisar que quien visita la URL, es quien creo la propiedad
+        if (!propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
+            return res.redirect('/mis-propiedades')
+        }
+
+        // Reescribir el objeto y actualizarlo
+    }
+}
+
 export {
     admin,
     crear,
     guardar,
     agregarImagen,
-    almacenarImagen
+    almacenarImagen,
+    editar
 }
