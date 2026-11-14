@@ -1,24 +1,61 @@
+import { unlink } from 'node:fs/promises'
 import { validationResult } from "express-validator"
 import { Precio, Categoria, Propiedad } from "../models/index.js"
 
 const admin = async (req, res) => {
-    const { id } = req.usuario
 
-    const propiedades = await Propiedad.findAll({
-        where: {
-            usuarioId: id
-        },
-        include: [
-            { model: Categoria, as: 'categoria' },
-            { model: Precio, as: 'precio' }
+    // Leer QueryString
+    const { pagina: paginaActual } = req.query
 
-        ]
-    })
+    const expresion = /^[1-9]$/
 
-    res.render('propiedades/admin', {
-        pagina: 'Mis Propiedades',
-        propiedades: propiedades
-    })
+    if (!expresion.test(paginaActual)) {
+        return res.redirect('/mis-propiedades?pagina=1')
+    }
+
+    try {
+        // Limites y Offset para el paginador
+        const limit = 3
+        const offset = ((paginaActual * limit) - limit)
+
+        const { id } = req.usuario
+
+        const [propiedades, total] = await Promise.all([
+            Propiedad.findAll({
+                limit,
+                offset,
+                where: {
+                    usuarioId: id
+                },
+                include: [
+                    { model: Categoria, as: 'categoria' },
+                    { model: Precio, as: 'precio' }
+
+                ],
+            }),
+            Propiedad.count({
+                where: {
+                    usuarioId: id
+                }
+            })
+        ])
+
+        res.render('propiedades/admin', {
+            pagina: 'Mis Propiedades',
+            propiedades: propiedades,
+            csrfToken: req.csrfToken(),
+            paginas: Math.ceil(total / limit),
+            paginaActual: Number(paginaActual),
+            total,
+            offset,
+            limit
+        })
+
+    } catch (error) {
+        console.log(error)
+    }
+
+
 }
 
 // Formulario para crear una nueva propiedad
@@ -144,7 +181,6 @@ const almacenarImagen = async (req, res, next) => {
 }
 
 const editar = async (req, res) => {
-
     const { id } = req.params
 
     // Validar que la propiedad exista
@@ -155,8 +191,8 @@ const editar = async (req, res) => {
     }
 
     // Revisar que quien visita la URL, es quien creo la propiedad
-    if (!propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
-
+    if (propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
+        return res.redirect('/mis-propiedades')
     }
 
     // Consultar Modelo de Precio y Categoria
@@ -166,7 +202,7 @@ const editar = async (req, res) => {
     ])
 
     res.render('propiedades/editar', {
-        pagina: 'Editar Propiedad',
+        pagina: `Editar Propiedad: ${propiedad.titulo}`,
         csrfToken: req.csrfToken(),
         precios,
         categorias,
@@ -176,8 +212,6 @@ const editar = async (req, res) => {
 
 const guardarCambios = async (req, res) => {
     // Verificar la validacion     
-
-    // Validacion
     let resultado = validationResult(req)
 
     if (!resultado.isEmpty()) {
@@ -194,23 +228,96 @@ const guardarCambios = async (req, res) => {
             errores: resultado.array(),
             datos: req.body
         })
-
-        const { id } = req.params
-
-        // Validar que la propiedad exista
-        const propiedad = await Propiedad.findByPk(id)
-
-        if (!propiedad) {
-            return res.redirect('/mis-propiedades')
-        }
-
-        // Revisar que quien visita la URL, es quien creo la propiedad
-        if (!propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
-            return res.redirect('/mis-propiedades')
-        }
-
-        // Reescribir el objeto y actualizarlo
     }
+
+    const { id } = req.params
+
+    // Validar que la propiedad exista
+    const propiedad = await Propiedad.findByPk(id)
+
+    if (!propiedad) {
+        return res.redirect('/mis-propiedades')
+    }
+
+    // Revisar que quien visita la URL, es quien creo la propiedad
+    if (propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
+        return res.redirect('/mis-propiedades')
+    }
+
+    // Reescribir el objeto y actualizarlo
+    try {
+        const { titulo, descripcion, habitaciones, estacionamiento, wc, calle, lat, lng, precio: precioId, categoria: categoriaId } = req.body
+
+        propiedad.set({
+            titulo,
+            descripcion,
+            habitaciones,
+            estacionamiento,
+            wc,
+            calle,
+            lat,
+            lng,
+            precioId,
+            categoriaId
+        })
+
+        await propiedad.save()
+
+        res.redirect('/mis-propiedades')
+
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+const eliminar = async (req, res) => {
+
+    const { id } = req.params
+
+    // Validar que la propiedad exista
+    const propiedad = await Propiedad.findByPk(id)
+
+    if (!propiedad) {
+        return res.redirect('/mis-propiedades')
+    }
+
+    // Revisar que quien visita la URL, es quien creo la propiedad
+    if (propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
+        return res.redirect('/mis-propiedades')
+    }
+
+    // Eliminar la imagen
+    try {
+        await unlink(`public/uploads/${propiedad.imagen}`)
+    } catch (error) {
+        console.log(error)
+    }
+
+    // Eliminar la propiedad
+    await propiedad.destroy()
+    res.redirect('/mis-propiedades')
+}
+
+// Mostrar una Propiedad
+const mostrarPropiedad = async (req, res) => {
+    const { id } = req.params
+
+    // Comprobar que la propiedad exista
+    const propiedad = await Propiedad.findByPk(id, {
+        include: [
+            { model: Precio, as: 'precio' },
+            { model: Categoria, as: 'categoria' }
+        ]
+    })
+
+    if (!propiedad) {
+        return res.redirect('/404')
+    }
+
+    res.render('propiedades/mostrar', {
+        propiedad,
+        pagina: propiedad.titulo
+    })
 }
 
 export {
@@ -219,5 +326,8 @@ export {
     guardar,
     agregarImagen,
     almacenarImagen,
-    editar
+    editar,
+    guardarCambios,
+    eliminar,
+    mostrarPropiedad
 }

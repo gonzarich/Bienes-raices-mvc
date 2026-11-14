@@ -30,13 +30,33 @@ block contenido
                                             path(fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v.816a3.836 3.836 0 0 0-1.72.756c-.712.566-1.112 1.35-1.112 2.178 0 .829.4 1.612 1.113 2.178.502.4 1.102.647 1.719.756v2.978a2.536 2.536 0 0 1-.921-.421l-.879-.66a.75.75 0 0 0-.9 1.2l.879.66c.533.4 1.169.645 1.821.75V18a.75.75 0 0 0 1.5 0v-.81a4.124 4.124 0 0 0 1.821-.749c.745-.559 1.179-1.344 1.179-2.191 0-.847-.434-1.632-1.179-2.191a4.122 4.122 0 0 0-1.821-.75V8.354c.29.082.559.213.786.393l.415.33a.75.75 0 0 0 .933-1.175l-.415-.33a3.836 3.836 0 0 0-1.719-.755V6Z" clip-rule="evenodd")
                                         = propiedad.precio.nombre
                 
-                                div(class="sm:w-1/4 md:w-2/6 lg:flex-1 flex flex-col lg:flex:flex-row gap-2")
+                                div(class="sm:w-1/4 md:w-2/6 lg:flex-1 flex flex-col lg:flex-row gap-2")
                                     form(action="#")
                                         input(type="submit" class=`w-full px-2 py-2 md:py-1 text-xs leading-5 font-semibold rounded-sm cursor-pointer ${propiedad.publicado ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}` value=`${propiedad.publicado ? 'Publicado' : 'No Publicado'}`)
 
-                                    a(href=`/propiedades/editar/${propiedad.id}`= class="text-center w-full px-2 py-2 md:py-1 text-xs leading-5 font-semibold rounded-sm cursor-pointer bg-indigo-100 text-indigo-800 ") Editar
+                                    a(href=`/propiedades/editar/${propiedad.id}` class="text-center w-full px-2 py-2 md:py-1 text-xs leading-5 font-semibold rounded-sm cursor-pointer bg-indigo-100 text-indigo-800 ") Editar
 
-                                    form(action="#")
-                                        input(type="submit" class=`w-full px-2 py-2 md:py-1 text-xs leading-5 font-semibold rounded-sm cursor-pointer bg-red-100 text-red-800 ` value=`Eliminar`)
+                                    form(method="POST" action=`/propiedades/eliminar/${propiedad.id}`)
+                                        input(type="hidden" name="_csrf" value=csrfToken)
+                                        input(type="submit" class="w-full px-2 py-2 md:py-1 text-xs leading-5 font-semibold rounded cursor-pointer bg-red-100 text-red-800" value="Eliminar")
+
+                div(class=" bg-white px-4 py-3 flex items-center justify-between border-t •border-gray-200 sm:px-6")
+
+                    div(class="flex-1 flex justify-between sm:hidden")
+                        a(href=`/mis-propiedades?pagina=${paginaActual - 1}` class=`${paginaActual === "1" ? 'pointer-events-none' : '' }relative incline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50`) Anterior
+
+                        a(href=`/mis-propiedades?pagina=${paginaActual + 1}` class=`${paginaActual === paginas? 'pointer-events-none' : ''}relative incline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50`) Siguiente
+                    
+                    div(class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between")
+                        p(class="text-sm text-gray-700 gap-2") Mostrando 
+                            span(class="font-medium") #{offset + 1} a 
+                            span(class="font-medium") #{total < limit + offset ? total : limit + offset} de 
+                            span(class="font-medium") #{total}
+                    
+                    div(class="hidden sm:block")
+                        nav(class="relative z-0 inline-flex rounded-md shadow-md")
+                            - var n = 1;
+                                while n <= paginas
+                                    a(href=`/mis-propiedades?pagina=${n}` class=`${paginaActual == n? 'bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'} relative incline-flex items-center px-4 py-2 border text-sm font-medium`) #{n++}
         else
-            p.text-center No hay Propiedades
+            p.text-center No Hay Propiedades

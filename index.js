@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 dotenv.config({ path: '.env' })
 import usuarioRoutes from './routes/usuarioRoutes.js'
 import propiedadesRoutes from './routes/propiedadesRoutes.js'
+import appRoutes from './routes/appsRoutes.js'
 import db from './config/db.js'
 
 // Crear la aplicación
@@ -36,6 +37,7 @@ app.set('views', './views');
 app.use(express.static('public'))
 
 // Routing
+app.use('/', appRoutes)
 app.use('/auth', usuarioRoutes);
 app.use('/', propiedadesRoutes);
 
